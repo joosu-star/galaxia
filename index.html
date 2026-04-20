@@ -1,0 +1,760 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Vacío — un espacio para pensamientos</title>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;1,300&family=Space+Mono:wght@400&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --void: #000005;
+    --soul: #f0f0ff;
+    --ui-fg: rgba(200, 200, 230, 0.6);
+    --ui-bg: rgba(5, 5, 20, 0.85);
+    --ui-border: rgba(200, 200, 255, 0.08);
+
+    --sad: #4a7fc1;
+    --happy: #f0c94a;
+    --anxious: #c14a4a;
+    --calm: #6a9e8e;
+  }
+
+  html, body {
+    width: 100%; height: 100%;
+    overflow: hidden;
+    background: var(--void);
+    cursor: none;
+  }
+
+  canvas {
+    position: fixed;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    display: block;
+  }
+
+  /* ─── UI OVERLAY ─── */
+  #ui {
+    position: fixed;
+    bottom: 32px;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 100;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 14px;
+    transition: opacity 0.8s ease;
+  }
+
+  #create-panel {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+    background: var(--ui-bg);
+    border: 1px solid var(--ui-border);
+    border-radius: 20px;
+    padding: 18px 22px;
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    width: 340px;
+    transition: box-shadow 0.4s ease, opacity 0.6s ease;
+    box-shadow: 0 0 40px rgba(100, 100, 255, 0.03);
+  }
+
+  #create-panel:focus-within {
+    box-shadow: 0 0 60px rgba(120, 120, 255, 0.08);
+    border-color: rgba(200, 200, 255, 0.15);
+  }
+
+  #thought-input {
+    width: 100%;
+    background: transparent;
+    border: none;
+    border-bottom: 1px solid var(--ui-border);
+    color: rgba(230, 230, 255, 0.85);
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 16px;
+    font-weight: 300;
+    font-style: italic;
+    padding: 6px 2px 10px;
+    outline: none;
+    caret-color: rgba(200, 200, 255, 0.5);
+    resize: none;
+    line-height: 1.5;
+    transition: border-color 0.3s ease;
+    max-height: 90px;
+    overflow-y: auto;
+    scrollbar-width: none;
+  }
+
+  #thought-input::placeholder {
+    color: rgba(150, 150, 200, 0.25);
+  }
+
+  #thought-input:focus {
+    border-bottom-color: rgba(200, 200, 255, 0.25);
+  }
+
+  .row-controls {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    width: 100%;
+    gap: 12px;
+  }
+
+  #emotion-selector {
+    display: flex;
+    gap: 8px;
+  }
+
+  .emo-btn {
+    width: 28px; height: 28px;
+    border-radius: 50%;
+    border: 2px solid transparent;
+    cursor: none;
+    transition: transform 0.2s ease, box-shadow 0.3s ease, border-color 0.2s ease;
+    position: relative;
+  }
+  .emo-btn::after {
+    content: attr(data-label);
+    position: absolute;
+    bottom: calc(100% + 8px);
+    left: 50%;
+    transform: translateX(-50%);
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 11px;
+    color: rgba(180,180,220,0.5);
+    white-space: nowrap;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.2s ease;
+  }
+  .emo-btn:hover::after { opacity: 1; }
+
+  .emo-btn[data-emo="triste"]  { background: var(--sad); }
+  .emo-btn[data-emo="feliz"]   { background: var(--happy); }
+  .emo-btn[data-emo="ansioso"] { background: var(--anxious); }
+  .emo-btn[data-emo="calma"]   { background: var(--calm); }
+
+  .emo-btn:hover   { transform: scale(1.2); }
+  .emo-btn.active  { border-color: white; box-shadow: 0 0 10px currentColor; transform: scale(1.15); }
+
+  #username-input {
+    flex: 1;
+    background: transparent;
+    border: none;
+    border-bottom: 1px solid var(--ui-border);
+    color: rgba(180, 180, 220, 0.5);
+    font-family: 'Space Mono', monospace;
+    font-size: 10px;
+    padding: 4px 2px 6px;
+    outline: none;
+    caret-color: rgba(180,180,220,0.4);
+    transition: border-color 0.3s ease;
+  }
+  #username-input::placeholder { color: rgba(130,130,180,0.2); }
+  #username-input:focus { border-bottom-color: rgba(180,180,220,0.2); }
+
+  #create-btn {
+    background: transparent;
+    border: 1px solid rgba(200,200,255,0.15);
+    color: rgba(200,200,255,0.5);
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 13px;
+    letter-spacing: 0.12em;
+    padding: 6px 16px;
+    border-radius: 30px;
+    cursor: none;
+    transition: all 0.3s ease;
+    white-space: nowrap;
+  }
+  #create-btn:hover {
+    background: rgba(200,200,255,0.05);
+    color: rgba(220,220,255,0.8);
+    border-color: rgba(200,200,255,0.3);
+    box-shadow: 0 0 20px rgba(200,200,255,0.05);
+  }
+
+  /* ─── STAR TOOLTIP ─── */
+  #star-tooltip {
+    position: fixed;
+    pointer-events: none;
+    z-index: 200;
+    opacity: 0;
+    transform: translateY(8px);
+    transition: opacity 0.4s ease, transform 0.4s ease;
+    max-width: 260px;
+    text-align: center;
+  }
+  #star-tooltip.visible {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  #tooltip-message {
+    font-family: 'Cormorant Garamond', serif;
+    font-style: italic;
+    font-size: 15px;
+    font-weight: 300;
+    color: rgba(230,230,255,0.9);
+    line-height: 1.6;
+    background: rgba(5,5,20,0.9);
+    border: 1px solid rgba(200,200,255,0.1);
+    border-radius: 12px;
+    padding: 12px 16px;
+    backdrop-filter: blur(16px);
+    margin-bottom: 4px;
+  }
+  #tooltip-user {
+    font-family: 'Space Mono', monospace;
+    font-size: 9px;
+    color: rgba(150,150,200,0.4);
+    letter-spacing: 0.1em;
+  }
+
+  /* ─── INTRO ─── */
+  #intro {
+    position: fixed;
+    inset: 0;
+    z-index: 300;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    pointer-events: none;
+    transition: opacity 1.5s ease;
+  }
+  #intro.hidden { opacity: 0; }
+
+  #intro-title {
+    font-family: 'Cormorant Garamond', serif;
+    font-weight: 300;
+    font-size: clamp(36px, 6vw, 72px);
+    letter-spacing: 0.35em;
+    color: rgba(200,200,240,0.07);
+    text-transform: uppercase;
+    animation: fadeTitle 4s ease forwards;
+  }
+  #intro-sub {
+    font-family: 'Cormorant Garamond', serif;
+    font-style: italic;
+    font-weight: 300;
+    font-size: clamp(12px, 1.5vw, 16px);
+    color: rgba(160,160,210,0.25);
+    margin-top: 16px;
+    letter-spacing: 0.15em;
+    animation: fadeTitle 4s 1s ease forwards;
+    opacity: 0;
+  }
+
+  @keyframes fadeTitle {
+    0%   { opacity: 0; }
+    30%  { opacity: 1; }
+    70%  { opacity: 1; }
+    100% { opacity: 0; }
+  }
+
+  /* ─── CUSTOM CURSOR ─── */
+  #cursor {
+    position: fixed;
+    pointer-events: none;
+    z-index: 9999;
+    width: 6px; height: 6px;
+    background: rgba(220,220,255,0.7);
+    border-radius: 50%;
+    transform: translate(-50%,-50%);
+    box-shadow: 0 0 6px rgba(200,200,255,0.4);
+    transition: transform 0.1s ease, width 0.2s ease, height 0.2s ease;
+    mix-blend-mode: screen;
+  }
+
+  /* ─── HINT ─── */
+  #hint {
+    font-family: 'Cormorant Garamond', serif;
+    font-style: italic;
+    font-size: 11px;
+    color: rgba(140,140,190,0.2);
+    letter-spacing: 0.12em;
+    transition: opacity 1s ease;
+    text-align: center;
+  }
+
+  /* ─── SCROLLBAR HIDE ─── */
+  ::-webkit-scrollbar { display: none; }
+</style>
+</head>
+<body>
+
+<canvas id="space"></canvas>
+<div id="cursor"></div>
+
+<div id="intro">
+  <div id="intro-title">vacío</div>
+  <div id="intro-sub">mueve tu alma · crea un pensamiento</div>
+</div>
+
+<div id="ui">
+  <div id="star-tooltip">
+    <div id="tooltip-message"></div>
+    <div id="tooltip-user"></div>
+  </div>
+
+  <div id="hint">muévete con el ratón · haz click para crear o explorar</div>
+
+  <div id="create-panel">
+    <textarea id="thought-input" placeholder="un pensamiento..." rows="2" maxlength="200"></textarea>
+    <div class="row-controls">
+      <div id="emotion-selector">
+        <button class="emo-btn active" data-emo="triste"  data-label="triste"  title="triste"></button>
+        <button class="emo-btn"        data-emo="feliz"   data-label="feliz"   title="feliz"></button>
+        <button class="emo-btn"        data-emo="ansioso" data-label="ansioso" title="ansioso"></button>
+        <button class="emo-btn"        data-emo="calma"   data-label="calma"   title="calma"></button>
+      </div>
+      <input id="username-input" type="text" placeholder="tu nombre" maxlength="24">
+      <button id="create-btn">soltar</button>
+    </div>
+  </div>
+</div>
+
+<div id="star-tooltip" style="display:none"></div>
+
+<script>
+// ──────────────────────────────────────────────
+// CONFIG
+// ──────────────────────────────────────────────
+const WORLD_SIZE   = 6000;
+const TRAIL_LEN    = 60;
+const SOUL_RADIUS  = 6;
+const SOUL_SPEED   = 2.2;
+const STAR_BASE_R  = 5;
+
+const EMO = {
+  triste:  { color: '#4a7fc1', glow: 'rgba(74,127,193,',  pulse: false, vibrate: false, drift: 0.12 },
+  feliz:   { color: '#f0c94a', glow: 'rgba(240,201,74,',  pulse: true,  vibrate: false, drift: 0.0  },
+  ansioso: { color: '#c14a4a', glow: 'rgba(193,74,74,',   pulse: false, vibrate: true,  drift: 0.0  },
+  calma:   { color: '#6a9e8e', glow: 'rgba(106,158,142,', pulse: false, vibrate: false, drift: 0.05 },
+};
+
+// ──────────────────────────────────────────────
+// STATE
+// ──────────────────────────────────────────────
+const canvas  = document.getElementById('space');
+const ctx     = canvas.getContext('2d');
+const cursor  = document.getElementById('cursor');
+const tooltip = document.getElementById('star-tooltip');
+const ttMsg   = document.getElementById('tooltip-message');
+const ttUser  = document.getElementById('tooltip-user');
+
+let W, H;
+let mouse    = { x: 0, y: 0 };
+let camX     = WORLD_SIZE / 2;
+let camY     = WORLD_SIZE / 2;
+let soul     = { wx: WORLD_SIZE/2, wy: WORLD_SIZE/2 };
+let trail    = [];
+let stars    = [];
+let selEmo   = 'triste';
+let hoveredStar  = null;
+let activeStar   = null;
+let tick     = 0;
+let introGone = false;
+
+// ──────────────────────────────────────────────
+// RESIZE
+// ──────────────────────────────────────────────
+function resize() {
+  W = canvas.width  = window.innerWidth;
+  H = canvas.height = window.innerHeight;
+}
+resize();
+window.addEventListener('resize', resize);
+
+// ──────────────────────────────────────────────
+// MOUSE
+// ──────────────────────────────────────────────
+window.addEventListener('mousemove', e => {
+  mouse.x = e.clientX;
+  mouse.y = e.clientY;
+  cursor.style.left = mouse.x + 'px';
+  cursor.style.top  = mouse.y + 'px';
+});
+
+// ──────────────────────────────────────────────
+// WORLD ↔ SCREEN
+// ──────────────────────────────────────────────
+function toScreen(wx, wy) {
+  return { x: wx - camX + W/2, y: wy - camY + H/2 };
+}
+function toWorld(sx, sy) {
+  return { wx: sx + camX - W/2, wy: sy + camY - H/2 };
+}
+
+// ──────────────────────────────────────────────
+// DRAW HELPERS
+// ──────────────────────────────────────────────
+function drawGlow(x, y, r, color, alpha, blur) {
+  ctx.save();
+  ctx.globalAlpha = alpha;
+  const g = ctx.createRadialGradient(x, y, 0, x, y, r);
+  g.addColorStop(0, color + '1)');
+  g.addColorStop(1, color + '0)');
+  ctx.fillStyle = g;
+  ctx.beginPath();
+  ctx.arc(x, y, r, 0, Math.PI*2);
+  ctx.fill();
+  ctx.restore();
+}
+
+// ──────────────────────────────────────────────
+// SOUL UPDATE & DRAW
+// ──────────────────────────────────────────────
+function updateSoul() {
+  const targetX = mouse.x;
+  const targetY = mouse.y;
+  const ssx = soul.wx - camX + W/2;
+  const ssy = soul.wy - camY + H/2;
+  const dx = targetX - ssx;
+  const dy = targetY - ssy;
+  const dist = Math.sqrt(dx*dx + dy*dy);
+
+  if (dist > 1) {
+    const speed = Math.min(SOUL_SPEED * (1 + dist * 0.01), 12);
+    soul.wx += (dx / dist) * speed;
+    soul.wy += (dy / dist) * speed;
+  }
+
+  // keep in world
+  soul.wx = Math.max(10, Math.min(WORLD_SIZE - 10, soul.wx));
+  soul.wy = Math.max(10, Math.min(WORLD_SIZE - 10, soul.wy));
+
+  // camera smoothly follows
+  camX += (soul.wx - camX) * 0.08;
+  camY += (soul.wy - camY) * 0.08;
+
+  // trail
+  const ss = toScreen(soul.wx, soul.wy);
+  trail.push({ x: ss.x, y: ss.y, t: 1 });
+  if (trail.length > TRAIL_LEN) trail.shift();
+  for (let i = 0; i < trail.length; i++) {
+    trail[i].t -= 1 / TRAIL_LEN;
+    if (trail[i].t < 0) trail[i].t = 0;
+  }
+}
+
+function drawTrail() {
+  for (let i = 1; i < trail.length; i++) {
+    const a = trail[i].t * 0.18;
+    if (a <= 0.005) continue;
+    ctx.save();
+    ctx.globalAlpha = a;
+    ctx.strokeStyle = `rgba(200,200,255,${a})`;
+    ctx.lineWidth = trail[i].t * 2.5;
+    ctx.lineCap = 'round';
+    ctx.beginPath();
+    ctx.moveTo(trail[i-1].x, trail[i-1].y);
+    ctx.lineTo(trail[i].x, trail[i].y);
+    ctx.stroke();
+    ctx.restore();
+  }
+}
+
+function drawSoul() {
+  const { x, y } = toScreen(soul.wx, soul.wy);
+  const pulse = 1 + Math.sin(tick * 0.04) * 0.12;
+
+  // outer glow layers
+  drawGlow(x, y, SOUL_RADIUS * 10 * pulse, 'rgba(200,200,255,', 0.04, 0);
+  drawGlow(x, y, SOUL_RADIUS * 5  * pulse, 'rgba(220,220,255,', 0.10, 0);
+  drawGlow(x, y, SOUL_RADIUS * 2.5* pulse, 'rgba(240,240,255,', 0.25, 0);
+
+  // core
+  ctx.save();
+  ctx.globalAlpha = 0.92;
+  ctx.fillStyle = '#f5f5ff';
+  ctx.shadowColor = 'rgba(200,200,255,0.9)';
+  ctx.shadowBlur = 12;
+  ctx.beginPath();
+  ctx.arc(x, y, SOUL_RADIUS * pulse, 0, Math.PI*2);
+  ctx.fill();
+  ctx.restore();
+}
+
+// ──────────────────────────────────────────────
+// STARS
+// ──────────────────────────────────────────────
+function createStar(text, emo, user) {
+  const sx = toScreen(soul.wx, soul.wy).x;
+  const sy = toScreen(soul.wx, soul.wy).y;
+
+  // appear near soul with a bit of random scatter
+  const angle  = Math.random() * Math.PI * 2;
+  const dist   = 60 + Math.random() * 100;
+  const spawnSX = sx + Math.cos(angle) * dist;
+  const spawnSY = sy + Math.sin(angle) * dist;
+  const { wx, wy } = toWorld(spawnSX, spawnSY);
+
+  const e = EMO[emo];
+  stars.push({
+    wx, wy,
+    text, emo, user: user || 'anónimo',
+    color: e.color, glow: e.glow,
+    pulse: e.pulse, vibrate: e.vibrate, drift: e.drift,
+    r: STAR_BASE_R + Math.random() * 3,
+    phase: Math.random() * Math.PI * 2,
+    vx: (Math.random()-0.5) * e.drift,
+    vy: (Math.random()-0.5) * e.drift,
+    born: tick,
+    alpha: 0,    // fades in
+    scale: 0.1,  // grows in
+  });
+}
+
+function updateStars() {
+  for (const s of stars) {
+    // fade in
+    if (s.alpha < 1) s.alpha = Math.min(1, s.alpha + 0.025);
+    if (s.scale < 1) s.scale = Math.min(1, s.scale + 0.03);
+
+    // drift
+    if (s.drift > 0) {
+      s.wx += s.vx;
+      s.wy += s.vy;
+      if (Math.random() < 0.005) {
+        s.vx = (Math.random()-0.5) * s.drift * 2;
+        s.vy = (Math.random()-0.5) * s.drift * 2;
+      }
+    }
+  }
+}
+
+function drawStar(s) {
+  const { x, y } = toScreen(s.wx, s.wy);
+  // cull offscreen
+  if (x < -100 || x > W+100 || y < -100 || y > H+100) return;
+
+  let r     = s.r * s.scale;
+  let gAlpha= s.alpha;
+  let vOff  = { x: 0, y: 0 };
+  const t   = tick + s.phase * 20;
+
+  // PULSE (feliz)
+  if (s.pulse) {
+    const p = 1 + Math.sin(t * 0.05) * 0.25;
+    r *= p;
+    gAlpha *= 0.8 + Math.sin(t * 0.05) * 0.2;
+  }
+
+  // VIBRATE (ansioso)
+  if (s.vibrate) {
+    vOff.x = Math.sin(t * 0.4) * 1.8;
+    vOff.y = Math.cos(t * 0.31) * 1.2;
+    gAlpha *= 0.7 + Math.abs(Math.sin(t * 0.2)) * 0.3;
+  }
+
+  const rx = x + vOff.x;
+  const ry = y + vOff.y;
+
+  // proximity glow
+  const ssx = toScreen(soul.wx, soul.wy);
+  const pd  = Math.hypot(rx - ssx.x, ry - ssx.y);
+  const proximity = Math.max(0, 1 - pd / 160);
+  const glowBoost = 1 + proximity * 2;
+
+  // hovered / active
+  const isHov = (s === hoveredStar);
+  const isAct = (s === activeStar);
+
+  // outer halos
+  if (gAlpha > 0.05) {
+    drawGlow(rx, ry, r * 9  * glowBoost, s.glow, (0.06 + proximity*0.08) * gAlpha, 0);
+    drawGlow(rx, ry, r * 5  * glowBoost, s.glow, (0.12 + proximity*0.12) * gAlpha, 0);
+    drawGlow(rx, ry, r * 2.5* glowBoost, s.glow, (0.35 + proximity*0.2)  * gAlpha, 0);
+  }
+
+  // expand on hover / active
+  const displayR = isAct ? r * 2.4 : isHov ? r * 1.5 : r;
+
+  ctx.save();
+  ctx.globalAlpha = s.alpha;
+  ctx.fillStyle = s.color;
+  ctx.shadowColor = s.color;
+  ctx.shadowBlur  = isAct ? 24 : isHov ? 14 : 6;
+  ctx.beginPath();
+  ctx.arc(rx, ry, displayR, 0, Math.PI*2);
+  ctx.fill();
+  ctx.restore();
+
+  // tiny spikes for anxious
+  if (s.vibrate && gAlpha > 0.3) {
+    ctx.save();
+    ctx.globalAlpha = 0.3 * gAlpha;
+    ctx.strokeStyle = s.color;
+    ctx.lineWidth = 0.7;
+    for (let k = 0; k < 6; k++) {
+      const a = (k / 6) * Math.PI * 2 + tick * 0.03;
+      ctx.beginPath();
+      ctx.moveTo(rx + Math.cos(a) * r * 1.2, ry + Math.sin(a) * r * 1.2);
+      ctx.lineTo(rx + Math.cos(a) * r * 2.5, ry + Math.sin(a) * r * 2.5);
+      ctx.stroke();
+    }
+    ctx.restore();
+  }
+}
+
+// ──────────────────────────────────────────────
+// HOVER / CLICK DETECTION
+// ──────────────────────────────────────────────
+function detectHover() {
+  let closest = null, minD = 60;
+  for (const s of stars) {
+    const { x, y } = toScreen(s.wx, s.wy);
+    const d = Math.hypot(mouse.x - x, mouse.y - y);
+    if (d < minD) { minD = d; closest = s; }
+  }
+  if (closest !== hoveredStar) {
+    hoveredStar = closest;
+  }
+}
+
+function showTooltip(s) {
+  if (!s) return;
+  const { x, y } = toScreen(s.wx, s.wy);
+  const tipX = Math.min(Math.max(x - 130, 10), W - 280);
+  const tipY = y - 100;
+  tooltip.style.left = tipX + 'px';
+  tooltip.style.top  = tipY + 'px';
+  ttMsg.textContent  = s.text;
+  ttUser.textContent = '— ' + s.user;
+  ttMsg.style.borderColor = s.color + '40';
+  tooltip.classList.add('visible');
+  activeStar = s;
+}
+
+function hideTooltip() {
+  tooltip.classList.remove('visible');
+  activeStar = null;
+}
+
+canvas.addEventListener('click', e => {
+  // if clicking a star → show tooltip
+  if (hoveredStar) {
+    if (activeStar === hoveredStar) hideTooltip();
+    else showTooltip(hoveredStar);
+    return;
+  }
+  hideTooltip();
+});
+
+// ──────────────────────────────────────────────
+// BACKGROUND PARTICLES (subtle)
+// ──────────────────────────────────────────────
+const bgParticles = Array.from({length: 80}, () => ({
+  x: Math.random() * W,
+  y: Math.random() * H,
+  r: Math.random() * 0.8 + 0.2,
+  a: Math.random() * 0.12 + 0.02,
+  twinkle: Math.random() * Math.PI * 2,
+  speed: Math.random() * 0.01 + 0.003,
+}));
+
+function drawBgParticles() {
+  for (const p of bgParticles) {
+    p.twinkle += p.speed;
+    const alpha = p.a * (0.5 + 0.5 * Math.sin(p.twinkle));
+    ctx.save();
+    ctx.globalAlpha = alpha;
+    ctx.fillStyle = '#8888cc';
+    ctx.beginPath();
+    ctx.arc(p.x, p.y, p.r, 0, Math.PI*2);
+    ctx.fill();
+    ctx.restore();
+  }
+}
+
+// ──────────────────────────────────────────────
+// MAIN LOOP
+// ──────────────────────────────────────────────
+function loop() {
+  tick++;
+  ctx.clearRect(0, 0, W, H);
+
+  // deep space background
+  ctx.fillStyle = '#000005';
+  ctx.fillRect(0, 0, W, H);
+
+  // vignette
+  const vig = ctx.createRadialGradient(W/2, H/2, H*0.2, W/2, H/2, H*0.85);
+  vig.addColorStop(0, 'rgba(0,0,0,0)');
+  vig.addColorStop(1, 'rgba(0,0,5,0.7)');
+  ctx.fillStyle = vig;
+  ctx.fillRect(0, 0, W, H);
+
+  drawBgParticles();
+  updateSoul();
+  updateStars();
+  detectHover();
+
+  drawTrail();
+  for (const s of stars) drawStar(s);
+  drawSoul();
+
+  requestAnimationFrame(loop);
+}
+
+loop();
+
+// ──────────────────────────────────────────────
+// HIDE INTRO
+// ──────────────────────────────────────────────
+setTimeout(() => {
+  document.getElementById('intro').classList.add('hidden');
+  introGone = true;
+}, 5500);
+
+// ──────────────────────────────────────────────
+// EMOTION SELECTOR
+// ──────────────────────────────────────────────
+document.querySelectorAll('.emo-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.emo-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    selEmo = btn.dataset.emo;
+  });
+});
+
+// ──────────────────────────────────────────────
+// CREATE STAR
+// ──────────────────────────────────────────────
+function doCreate() {
+  const text = document.getElementById('thought-input').value.trim();
+  const user = document.getElementById('username-input').value.trim();
+  if (!text) {
+    document.getElementById('thought-input').focus();
+    return;
+  }
+  createStar(text, selEmo, user || 'anónimo');
+  document.getElementById('thought-input').value = '';
+}
+
+document.getElementById('create-btn').addEventListener('click', doCreate);
+
+document.getElementById('thought-input').addEventListener('keydown', e => {
+  if (e.key === 'Enter' && !e.shiftKey) {
+    e.preventDefault();
+    doCreate();
+  }
+});
+
+// ──────────────────────────────────────────────
+// PREVENT CURSOR DEFAULT
+// ──────────────────────────────────────────────
+document.querySelectorAll('button, input, textarea').forEach(el => {
+  el.addEventListener('mouseenter', () => cursor.style.transform = 'translate(-50%,-50%) scale(2)');
+  el.addEventListener('mouseleave', () => cursor.style.transform = 'translate(-50%,-50%) scale(1)');
+});
+</script>
+</body>
+</html>
