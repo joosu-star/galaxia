@@ -6,313 +6,245 @@
 <title>Vacío — un espacio para pensamientos</title>
 <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;1,300&family=Space+Mono:wght@400&display=swap" rel="stylesheet">
 <style>
-  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+*, *::before, *::after { box-sizing:border-box; margin:0; padding:0; }
 
-  :root {
-    --void: #000005;
-    --soul: #f0f0ff;
-    --ui-fg: rgba(200, 200, 230, 0.6);
-    --ui-bg: rgba(5, 5, 20, 0.85);
-    --ui-border: rgba(200, 200, 255, 0.08);
+:root {
+  --void: #000005;
+  --ui-bg: rgba(4,4,14,.92);
+  --ui-border: rgba(200,200,255,.07);
+}
 
-    --sad: #4a7fc1;
-    --happy: #f0c94a;
-    --anxious: #c14a4a;
-    --calm: #6a9e8e;
-  }
+html, body {
+  width:100%; height:100%;
+  overflow:hidden;
+  background:var(--void);
+  cursor:none;
+}
 
-  html, body {
-    width: 100%; height: 100%;
-    overflow: hidden;
-    background: var(--void);
-    cursor: none;
-  }
+canvas {
+  position:fixed; top:0; left:0;
+  width:100%; height:100%;
+  display:block;
+}
 
-  canvas {
-    position: fixed;
-    top: 0; left: 0;
-    width: 100%; height: 100%;
-    display: block;
-  }
+/* ── CURSOR ── */
+#cursor {
+  position:fixed; pointer-events:none; z-index:9999;
+  width:5px; height:5px;
+  background:rgba(220,220,255,.75);
+  border-radius:50%;
+  transform:translate(-50%,-50%);
+  box-shadow:0 0 8px rgba(200,200,255,.5);
+  transition:width .15s ease,height .15s ease,opacity .2s ease;
+  mix-blend-mode:screen;
+}
+#cursor.big { width:13px; height:13px; opacity:.45; }
 
-  /* ─── UI OVERLAY ─── */
-  #ui {
-    position: fixed;
-    bottom: 32px;
-    left: 50%;
-    transform: translateX(-50%);
-    z-index: 100;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 14px;
-    transition: opacity 0.8s ease;
-  }
+/* ── BOTTOM UI ── */
+#ui {
+  position:fixed; bottom:26px; left:50%;
+  transform:translateX(-50%);
+  z-index:100;
+  display:flex; flex-direction:column; align-items:center; gap:10px;
+}
 
-  #create-panel {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 10px;
-    background: var(--ui-bg);
-    border: 1px solid var(--ui-border);
-    border-radius: 20px;
-    padding: 18px 22px;
-    backdrop-filter: blur(20px);
-    -webkit-backdrop-filter: blur(20px);
-    width: 340px;
-    transition: box-shadow 0.4s ease, opacity 0.6s ease;
-    box-shadow: 0 0 40px rgba(100, 100, 255, 0.03);
-  }
+#create-panel {
+  display:flex; flex-direction:column; align-items:center; gap:10px;
+  background:var(--ui-bg);
+  border:1px solid var(--ui-border);
+  border-radius:18px; padding:16px 20px;
+  backdrop-filter:blur(24px); -webkit-backdrop-filter:blur(24px);
+  width:330px;
+  transition:box-shadow .4s ease,border-color .4s ease;
+}
+#create-panel:focus-within {
+  box-shadow:0 0 50px rgba(120,120,255,.07);
+  border-color:rgba(200,200,255,.13);
+}
 
-  #create-panel:focus-within {
-    box-shadow: 0 0 60px rgba(120, 120, 255, 0.08);
-    border-color: rgba(200, 200, 255, 0.15);
-  }
+#thought-input {
+  width:100%; background:transparent; border:none;
+  border-bottom:1px solid var(--ui-border);
+  color:rgba(230,230,255,.85);
+  font-family:'Cormorant Garamond',serif;
+  font-size:15.5px; font-weight:300; font-style:italic;
+  padding:4px 2px 9px; outline:none;
+  caret-color:rgba(200,200,255,.45);
+  resize:none; line-height:1.55;
+  transition:border-color .3s ease;
+  max-height:80px; overflow-y:auto; scrollbar-width:none;
+}
+#thought-input::placeholder { color:rgba(150,150,200,.2); }
+#thought-input:focus { border-bottom-color:rgba(200,200,255,.22); }
 
-  #thought-input {
-    width: 100%;
-    background: transparent;
-    border: none;
-    border-bottom: 1px solid var(--ui-border);
-    color: rgba(230, 230, 255, 0.85);
-    font-family: 'Cormorant Garamond', serif;
-    font-size: 16px;
-    font-weight: 300;
-    font-style: italic;
-    padding: 6px 2px 10px;
-    outline: none;
-    caret-color: rgba(200, 200, 255, 0.5);
-    resize: none;
-    line-height: 1.5;
-    transition: border-color 0.3s ease;
-    max-height: 90px;
-    overflow-y: auto;
-    scrollbar-width: none;
-  }
+.row-controls {
+  display:flex; align-items:center;
+  justify-content:space-between; width:100%; gap:10px;
+}
 
-  #thought-input::placeholder {
-    color: rgba(150, 150, 200, 0.25);
-  }
+#emotion-selector { display:flex; gap:7px; }
 
-  #thought-input:focus {
-    border-bottom-color: rgba(200, 200, 255, 0.25);
-  }
+.emo-btn {
+  width:26px; height:26px; border-radius:50%;
+  border:2px solid transparent; cursor:none;
+  transition:transform .2s ease,box-shadow .3s ease,border-color .2s ease;
+  position:relative;
+}
+.emo-btn::after {
+  content:attr(data-label);
+  position:absolute; bottom:calc(100% + 7px); left:50%;
+  transform:translateX(-50%);
+  font-family:'Cormorant Garamond',serif; font-size:10px;
+  color:rgba(180,180,220,.45); white-space:nowrap;
+  opacity:0; pointer-events:none; transition:opacity .2s ease;
+}
+.emo-btn:hover::after { opacity:1; }
+.emo-btn[data-emo="triste"]  { background:#4a7fc1; }
+.emo-btn[data-emo="feliz"]   { background:#f0c94a; }
+.emo-btn[data-emo="ansioso"] { background:#c14a4a; }
+.emo-btn[data-emo="calma"]   { background:#6a9e8e; }
+.emo-btn:hover  { transform:scale(1.18); }
+.emo-btn.active { border-color:#fff; box-shadow:0 0 10px currentColor; transform:scale(1.12); }
 
-  .row-controls {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    width: 100%;
-    gap: 12px;
-  }
+#username-input {
+  flex:1; background:transparent; border:none;
+  border-bottom:1px solid var(--ui-border);
+  color:rgba(170,170,215,.45);
+  font-family:'Space Mono',monospace; font-size:9.5px;
+  padding:3px 2px 5px; outline:none;
+  caret-color:rgba(170,170,215,.35);
+  transition:border-color .3s ease;
+}
+#username-input::placeholder { color:rgba(120,120,170,.18); }
+#username-input:focus { border-bottom-color:rgba(170,170,215,.18); }
 
-  #emotion-selector {
-    display: flex;
-    gap: 8px;
-  }
+#create-btn {
+  background:transparent;
+  border:1px solid rgba(200,200,255,.12);
+  color:rgba(200,200,255,.45);
+  font-family:'Cormorant Garamond',serif;
+  font-size:12.5px; letter-spacing:.12em;
+  padding:5px 14px; border-radius:30px; cursor:none;
+  transition:all .3s ease; white-space:nowrap;
+}
+#create-btn:hover {
+  background:rgba(200,200,255,.04);
+  color:rgba(220,220,255,.75);
+  border-color:rgba(200,200,255,.28);
+}
 
-  .emo-btn {
-    width: 28px; height: 28px;
-    border-radius: 50%;
-    border: 2px solid transparent;
-    cursor: none;
-    transition: transform 0.2s ease, box-shadow 0.3s ease, border-color 0.2s ease;
-    position: relative;
-  }
-  .emo-btn::after {
-    content: attr(data-label);
-    position: absolute;
-    bottom: calc(100% + 8px);
-    left: 50%;
-    transform: translateX(-50%);
-    font-family: 'Cormorant Garamond', serif;
-    font-size: 11px;
-    color: rgba(180,180,220,0.5);
-    white-space: nowrap;
-    opacity: 0;
-    pointer-events: none;
-    transition: opacity 0.2s ease;
-  }
-  .emo-btn:hover::after { opacity: 1; }
+#hint {
+  font-family:'Cormorant Garamond',serif; font-style:italic;
+  font-size:10.5px; color:rgba(130,130,185,.18);
+  letter-spacing:.12em; text-align:center;
+}
 
-  .emo-btn[data-emo="triste"]  { background: var(--sad); }
-  .emo-btn[data-emo="feliz"]   { background: var(--happy); }
-  .emo-btn[data-emo="ansioso"] { background: var(--anxious); }
-  .emo-btn[data-emo="calma"]   { background: var(--calm); }
+/* ── MESSAGE PANEL ── */
+#msg-panel {
+  position:fixed; z-index:500;
+  pointer-events:none;
+  opacity:0;
+  transition:opacity .5s ease,transform .45s ease;
+  transform:translateX(-50%) translateY(10px);
+}
+#msg-panel.visible {
+  opacity:1;
+  transform:translateX(-50%) translateY(0);
+  pointer-events:auto;
+}
 
-  .emo-btn:hover   { transform: scale(1.2); }
-  .emo-btn.active  { border-color: white; box-shadow: 0 0 10px currentColor; transform: scale(1.15); }
+#msg-inner {
+  background:#03030d;
+  border:1px solid rgba(255,255,255,.055);
+  border-top:1px solid var(--star-color,rgba(255,255,255,.1));
+  border-radius:3px;
+  padding:18px 22px 14px;
+  min-width:200px; max-width:270px;
+  position:relative;
+}
 
-  #username-input {
-    flex: 1;
-    background: transparent;
-    border: none;
-    border-bottom: 1px solid var(--ui-border);
-    color: rgba(180, 180, 220, 0.5);
-    font-family: 'Space Mono', monospace;
-    font-size: 10px;
-    padding: 4px 2px 6px;
-    outline: none;
-    caret-color: rgba(180,180,220,0.4);
-    transition: border-color 0.3s ease;
-  }
-  #username-input::placeholder { color: rgba(130,130,180,0.2); }
-  #username-input:focus { border-bottom-color: rgba(180,180,220,0.2); }
+#msg-text {
+  font-family:'Cormorant Garamond',serif;
+  font-style:italic; font-weight:300;
+  font-size:15px; line-height:1.72;
+  color:rgba(225,225,255,.88);
+  letter-spacing:.01em;
+  word-break:break-word;
+}
+#msg-user {
+  font-family:'Space Mono',monospace;
+  font-size:8px; letter-spacing:.14em;
+  color:rgba(140,140,200,.28);
+  margin-top:11px;
+}
+#msg-close {
+  position:absolute; top:9px; right:11px;
+  font-family:'Space Mono',monospace; font-size:8px;
+  color:rgba(150,150,200,.22);
+  cursor:none; background:none; border:none;
+  transition:color .2s ease; line-height:1; padding:2px;
+}
+#msg-close:hover { color:rgba(180,180,230,.55); }
 
-  #create-btn {
-    background: transparent;
-    border: 1px solid rgba(200,200,255,0.15);
-    color: rgba(200,200,255,0.5);
-    font-family: 'Cormorant Garamond', serif;
-    font-size: 13px;
-    letter-spacing: 0.12em;
-    padding: 6px 16px;
-    border-radius: 30px;
-    cursor: none;
-    transition: all 0.3s ease;
-    white-space: nowrap;
-  }
-  #create-btn:hover {
-    background: rgba(200,200,255,0.05);
-    color: rgba(220,220,255,0.8);
-    border-color: rgba(200,200,255,0.3);
-    box-shadow: 0 0 20px rgba(200,200,255,0.05);
-  }
+/* ── INTRO ── */
+#intro {
+  position:fixed; inset:0; z-index:300;
+  display:flex; flex-direction:column;
+  align-items:center; justify-content:center;
+  pointer-events:none;
+  transition:opacity 1.6s ease;
+}
+#intro.hidden { opacity:0; }
+#intro-title {
+  font-family:'Cormorant Garamond',serif; font-weight:300;
+  font-size:clamp(34px,6vw,70px); letter-spacing:.38em;
+  color:rgba(200,200,240,.06); text-transform:uppercase;
+  animation:fadeIn 4.5s ease forwards;
+}
+#intro-sub {
+  font-family:'Cormorant Garamond',serif; font-style:italic; font-weight:300;
+  font-size:clamp(11px,1.4vw,15px);
+  color:rgba(155,155,210,.2);
+  margin-top:14px; letter-spacing:.16em;
+  animation:fadeIn 4.5s 1s ease forwards; opacity:0;
+}
+@keyframes fadeIn {
+  0%  { opacity:0; }
+  25% { opacity:1; }
+  75% { opacity:1; }
+  100%{ opacity:0; }
+}
 
-  /* ─── STAR TOOLTIP ─── */
-  #star-tooltip {
-    position: fixed;
-    pointer-events: none;
-    z-index: 200;
-    opacity: 0;
-    transform: translateY(8px);
-    transition: opacity 0.4s ease, transform 0.4s ease;
-    max-width: 260px;
-    text-align: center;
-  }
-  #star-tooltip.visible {
-    opacity: 1;
-    transform: translateY(0);
-  }
-  #tooltip-message {
-    font-family: 'Cormorant Garamond', serif;
-    font-style: italic;
-    font-size: 15px;
-    font-weight: 300;
-    color: rgba(230,230,255,0.9);
-    line-height: 1.6;
-    background: rgba(5,5,20,0.9);
-    border: 1px solid rgba(200,200,255,0.1);
-    border-radius: 12px;
-    padding: 12px 16px;
-    backdrop-filter: blur(16px);
-    margin-bottom: 4px;
-  }
-  #tooltip-user {
-    font-family: 'Space Mono', monospace;
-    font-size: 9px;
-    color: rgba(150,150,200,0.4);
-    letter-spacing: 0.1em;
-  }
-
-  /* ─── INTRO ─── */
-  #intro {
-    position: fixed;
-    inset: 0;
-    z-index: 300;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    pointer-events: none;
-    transition: opacity 1.5s ease;
-  }
-  #intro.hidden { opacity: 0; }
-
-  #intro-title {
-    font-family: 'Cormorant Garamond', serif;
-    font-weight: 300;
-    font-size: clamp(36px, 6vw, 72px);
-    letter-spacing: 0.35em;
-    color: rgba(200,200,240,0.07);
-    text-transform: uppercase;
-    animation: fadeTitle 4s ease forwards;
-  }
-  #intro-sub {
-    font-family: 'Cormorant Garamond', serif;
-    font-style: italic;
-    font-weight: 300;
-    font-size: clamp(12px, 1.5vw, 16px);
-    color: rgba(160,160,210,0.25);
-    margin-top: 16px;
-    letter-spacing: 0.15em;
-    animation: fadeTitle 4s 1s ease forwards;
-    opacity: 0;
-  }
-
-  @keyframes fadeTitle {
-    0%   { opacity: 0; }
-    30%  { opacity: 1; }
-    70%  { opacity: 1; }
-    100% { opacity: 0; }
-  }
-
-  /* ─── CUSTOM CURSOR ─── */
-  #cursor {
-    position: fixed;
-    pointer-events: none;
-    z-index: 9999;
-    width: 6px; height: 6px;
-    background: rgba(220,220,255,0.7);
-    border-radius: 50%;
-    transform: translate(-50%,-50%);
-    box-shadow: 0 0 6px rgba(200,200,255,0.4);
-    transition: transform 0.1s ease, width 0.2s ease, height 0.2s ease;
-    mix-blend-mode: screen;
-  }
-
-  /* ─── HINT ─── */
-  #hint {
-    font-family: 'Cormorant Garamond', serif;
-    font-style: italic;
-    font-size: 11px;
-    color: rgba(140,140,190,0.2);
-    letter-spacing: 0.12em;
-    transition: opacity 1s ease;
-    text-align: center;
-  }
-
-  /* ─── SCROLLBAR HIDE ─── */
-  ::-webkit-scrollbar { display: none; }
+::-webkit-scrollbar { display:none; }
 </style>
 </head>
 <body>
-
 <canvas id="space"></canvas>
 <div id="cursor"></div>
 
 <div id="intro">
   <div id="intro-title">vacío</div>
-  <div id="intro-sub">mueve tu alma · crea un pensamiento</div>
+  <div id="intro-sub">acércate a las estrellas · crea un pensamiento</div>
+</div>
+
+<div id="msg-panel">
+  <div id="msg-inner">
+    <button id="msg-close">✕</button>
+    <div id="msg-text"></div>
+    <div id="msg-user"></div>
+  </div>
 </div>
 
 <div id="ui">
-  <div id="star-tooltip">
-    <div id="tooltip-message"></div>
-    <div id="tooltip-user"></div>
-  </div>
-
-  <div id="hint">muévete con el ratón · haz click para crear o explorar</div>
-
+  <div id="hint">muévete · acércate a una estrella para leerla</div>
   <div id="create-panel">
     <textarea id="thought-input" placeholder="un pensamiento..." rows="2" maxlength="200"></textarea>
     <div class="row-controls">
       <div id="emotion-selector">
-        <button class="emo-btn active" data-emo="triste"  data-label="triste"  title="triste"></button>
-        <button class="emo-btn"        data-emo="feliz"   data-label="feliz"   title="feliz"></button>
-        <button class="emo-btn"        data-emo="ansioso" data-label="ansioso" title="ansioso"></button>
-        <button class="emo-btn"        data-emo="calma"   data-label="calma"   title="calma"></button>
+        <button class="emo-btn active" data-emo="triste"  data-label="triste"></button>
+        <button class="emo-btn"        data-emo="feliz"   data-label="feliz"></button>
+        <button class="emo-btn"        data-emo="ansioso" data-label="ansioso"></button>
+        <button class="emo-btn"        data-emo="calma"   data-label="calma"></button>
       </div>
       <input id="username-input" type="text" placeholder="tu nombre" maxlength="24">
       <button id="create-btn">soltar</button>
@@ -320,51 +252,35 @@
   </div>
 </div>
 
-<div id="star-tooltip" style="display:none"></div>
-
 <script>
-// ──────────────────────────────────────────────
+// ═══════════════════════════════════════════
 // CONFIG
-// ──────────────────────────────────────────────
-const WORLD_SIZE   = 6000;
-const TRAIL_LEN    = 60;
-const SOUL_RADIUS  = 6;
-const SOUL_SPEED   = 2.2;
-const STAR_BASE_R  = 5;
+// ═══════════════════════════════════════════
+const WORLD     = 7000;
+const TRAIL_MAX = 65;
+const SOUL_R    = 5.5;
+const ABSORB_R  = 100;  // start glowing
+const REVEAL_R  = 32;   // show message
 
 const EMO = {
-  triste:  { color: '#4a7fc1', glow: 'rgba(74,127,193,',  pulse: false, vibrate: false, drift: 0.12 },
-  feliz:   { color: '#f0c94a', glow: 'rgba(240,201,74,',  pulse: true,  vibrate: false, drift: 0.0  },
-  ansioso: { color: '#c14a4a', glow: 'rgba(193,74,74,',   pulse: false, vibrate: true,  drift: 0.0  },
-  calma:   { color: '#6a9e8e', glow: 'rgba(106,158,142,', pulse: false, vibrate: false, drift: 0.05 },
+  triste:  { color:'#4a7fc1', glow:'74,127,193',  pulse:false, vibrate:false, drift:.1  },
+  feliz:   { color:'#f0c94a', glow:'240,201,74',  pulse:true,  vibrate:false, drift:0   },
+  ansioso: { color:'#c14a4a', glow:'193,74,74',   pulse:false, vibrate:true,  drift:0   },
+  calma:   { color:'#6a9e8e', glow:'106,158,142', pulse:false, vibrate:false, drift:.05 },
 };
 
-// ──────────────────────────────────────────────
-// STATE
-// ──────────────────────────────────────────────
-const canvas  = document.getElementById('space');
-const ctx     = canvas.getContext('2d');
-const cursor  = document.getElementById('cursor');
-const tooltip = document.getElementById('star-tooltip');
-const ttMsg   = document.getElementById('tooltip-message');
-const ttUser  = document.getElementById('tooltip-user');
+// ═══════════════════════════════════════════
+// SETUP
+// ═══════════════════════════════════════════
+const canvas   = document.getElementById('space');
+const ctx      = canvas.getContext('2d');
+const cursorEl = document.getElementById('cursor');
+const msgPanel = document.getElementById('msg-panel');
+const msgText  = document.getElementById('msg-text');
+const msgUser  = document.getElementById('msg-user');
+const msgInner = document.getElementById('msg-inner');
 
 let W, H;
-let mouse    = { x: 0, y: 0 };
-let camX     = WORLD_SIZE / 2;
-let camY     = WORLD_SIZE / 2;
-let soul     = { wx: WORLD_SIZE/2, wy: WORLD_SIZE/2 };
-let trail    = [];
-let stars    = [];
-let selEmo   = 'triste';
-let hoveredStar  = null;
-let activeStar   = null;
-let tick     = 0;
-let introGone = false;
-
-// ──────────────────────────────────────────────
-// RESIZE
-// ──────────────────────────────────────────────
 function resize() {
   W = canvas.width  = window.innerWidth;
   H = canvas.height = window.innerHeight;
@@ -372,389 +288,436 @@ function resize() {
 resize();
 window.addEventListener('resize', resize);
 
-// ──────────────────────────────────────────────
-// MOUSE
-// ──────────────────────────────────────────────
+let mouse  = { x: W/2, y: H/2 };
+let camX   = WORLD/2, camY = WORLD/2;
+let soul   = { wx: WORLD/2, wy: WORLD/2 };
+let trail  = [];
+let stars  = [];
+let selEmo = 'triste';
+let tick   = 0;
+let absorbedStar = null;
+
 window.addEventListener('mousemove', e => {
   mouse.x = e.clientX;
   mouse.y = e.clientY;
-  cursor.style.left = mouse.x + 'px';
-  cursor.style.top  = mouse.y + 'px';
+  cursorEl.style.left = e.clientX + 'px';
+  cursorEl.style.top  = e.clientY + 'px';
 });
 
-// ──────────────────────────────────────────────
-// WORLD ↔ SCREEN
-// ──────────────────────────────────────────────
-function toScreen(wx, wy) {
-  return { x: wx - camX + W/2, y: wy - camY + H/2 };
-}
-function toWorld(sx, sy) {
-  return { wx: sx + camX - W/2, wy: sy + camY - H/2 };
-}
+const toScreen = (wx,wy) => ({ x: wx-camX+W/2, y: wy-camY+H/2 });
+const toWorld  = (sx,sy) => ({ wx: sx+camX-W/2, wy: sy+camY-H/2 });
 
-// ──────────────────────────────────────────────
-// DRAW HELPERS
-// ──────────────────────────────────────────────
-function drawGlow(x, y, r, color, alpha, blur) {
+// ═══════════════════════════════════════════
+// RADIAL GLOW HELPER
+// ═══════════════════════════════════════════
+function radialGlow(x,y,r,colorStr,alpha) {
+  if (alpha <= 0.004) return;
   ctx.save();
   ctx.globalAlpha = alpha;
-  const g = ctx.createRadialGradient(x, y, 0, x, y, r);
-  g.addColorStop(0, color + '1)');
-  g.addColorStop(1, color + '0)');
+  const g = ctx.createRadialGradient(x,y,0,x,y,r);
+  g.addColorStop(0, colorStr+'1)');
+  g.addColorStop(1, colorStr+'0)');
   ctx.fillStyle = g;
-  ctx.beginPath();
-  ctx.arc(x, y, r, 0, Math.PI*2);
-  ctx.fill();
+  ctx.beginPath(); ctx.arc(x,y,r,0,Math.PI*2); ctx.fill();
   ctx.restore();
 }
 
-// ──────────────────────────────────────────────
-// SOUL UPDATE & DRAW
-// ──────────────────────────────────────────────
-function updateSoul() {
-  const targetX = mouse.x;
-  const targetY = mouse.y;
-  const ssx = soul.wx - camX + W/2;
-  const ssy = soul.wy - camY + H/2;
-  const dx = targetX - ssx;
-  const dy = targetY - ssy;
-  const dist = Math.sqrt(dx*dx + dy*dy);
+// ═══════════════════════════════════════════
+// STARDUST — fixed bg + parallax
+// ═══════════════════════════════════════════
+const BG_DUST = Array.from({length:240}, () => ({
+  x: Math.random()*WORLD, y: Math.random()*WORLD,
+  r: Math.random()*.7+.1,
+  a: Math.random()*.16+.03,
+  twinkle: Math.random()*Math.PI*2,
+  speed:   Math.random()*.009+.002,
+  parallax:Math.random()*.18+.02,
+}));
 
-  if (dist > 1) {
-    const speed = Math.min(SOUL_SPEED * (1 + dist * 0.01), 12);
-    soul.wx += (dx / dist) * speed;
-    soul.wy += (dy / dist) * speed;
+const DUST_CLOUDS = Array.from({length:40}, () => ({
+  x: Math.random()*WORLD, y: Math.random()*WORLD,
+  r: Math.random()*3+.6,
+  a: Math.random()*.055+.01,
+  twinkle: Math.random()*Math.PI*2,
+  speed:   Math.random()*.004+.001,
+  parallax:Math.random()*.09+.01,
+  color: ['160,140,255','255,210,160','140,190,255','180,255,200'][Math.floor(Math.random()*4)],
+}));
+
+function drawDust() {
+  for (const p of BG_DUST) {
+    p.twinkle += p.speed;
+    const a  = p.a * (.5+.5*Math.sin(p.twinkle));
+    const sx = (p.x-camX)*(1-p.parallax) + W/2;
+    const sy = (p.y-camY)*(1-p.parallax) + H/2;
+    if (sx<-4||sx>W+4||sy<-4||sy>H+4) continue;
+    ctx.save(); ctx.globalAlpha=a;
+    ctx.fillStyle='#aaaadd';
+    ctx.beginPath(); ctx.arc(sx,sy,p.r,0,Math.PI*2); ctx.fill();
+    ctx.restore();
   }
-
-  // keep in world
-  soul.wx = Math.max(10, Math.min(WORLD_SIZE - 10, soul.wx));
-  soul.wy = Math.max(10, Math.min(WORLD_SIZE - 10, soul.wy));
-
-  // camera smoothly follows
-  camX += (soul.wx - camX) * 0.08;
-  camY += (soul.wy - camY) * 0.08;
-
-  // trail
-  const ss = toScreen(soul.wx, soul.wy);
-  trail.push({ x: ss.x, y: ss.y, t: 1 });
-  if (trail.length > TRAIL_LEN) trail.shift();
-  for (let i = 0; i < trail.length; i++) {
-    trail[i].t -= 1 / TRAIL_LEN;
-    if (trail[i].t < 0) trail[i].t = 0;
-  }
-}
-
-function drawTrail() {
-  for (let i = 1; i < trail.length; i++) {
-    const a = trail[i].t * 0.18;
-    if (a <= 0.005) continue;
-    ctx.save();
-    ctx.globalAlpha = a;
-    ctx.strokeStyle = `rgba(200,200,255,${a})`;
-    ctx.lineWidth = trail[i].t * 2.5;
-    ctx.lineCap = 'round';
-    ctx.beginPath();
-    ctx.moveTo(trail[i-1].x, trail[i-1].y);
-    ctx.lineTo(trail[i].x, trail[i].y);
-    ctx.stroke();
+  for (const p of DUST_CLOUDS) {
+    p.twinkle += p.speed;
+    const a  = p.a * (.4+.6*Math.sin(p.twinkle));
+    const sx = (p.x-camX)*(1-p.parallax) + W/2;
+    const sy = (p.y-camY)*(1-p.parallax) + H/2;
+    if (sx<-30||sx>W+30||sy<-30||sy>H+30) continue;
+    ctx.save(); ctx.globalAlpha=a;
+    const g = ctx.createRadialGradient(sx,sy,0,sx,sy,p.r*4);
+    g.addColorStop(0,`rgba(${p.color},1)`);
+    g.addColorStop(1,`rgba(${p.color},0)`);
+    ctx.fillStyle=g;
+    ctx.beginPath(); ctx.arc(sx,sy,p.r*4,0,Math.PI*2); ctx.fill();
     ctx.restore();
   }
 }
 
+// ═══════════════════════════════════════════
+// GALAXIES — pre-rendered to offscreen canvas
+// ═══════════════════════════════════════════
+function buildGalaxy(hue, arms, sz) {
+  const oc  = document.createElement('canvas');
+  oc.width  = sz; oc.height = sz;
+  const c2  = oc.getContext('2d');
+  c2.translate(sz/2, sz/2);
+
+  for (let a=0; a<arms; a++) {
+    const base = (a/arms)*Math.PI*2;
+    const pts  = 220;
+    for (let j=0; j<pts; j++) {
+      const t     = j/pts;
+      const angle = base + t*Math.PI*3.8 + (Math.random()-.5)*.35;
+      const r     = t*(sz*.38 + Math.random()*sz*.06);
+      const sc    = (1-t*.6)*sz*.04*(Math.random()*2-1);
+      const ox    = Math.cos(angle)*r + sc;
+      const oy    = Math.sin(angle)*r + sc*.5;
+      const h     = (hue + Math.random()*50-25+360)%360;
+      c2.save();
+      c2.globalAlpha = (1-t)*(Math.random()*.22+.04);
+      c2.fillStyle   = `hsl(${h},55%,82%)`;
+      c2.beginPath(); c2.arc(ox,oy, Math.random()*1.5+.25, 0,Math.PI*2); c2.fill();
+      c2.restore();
+    }
+  }
+  // core scatter
+  for (let j=0;j<60;j++) {
+    const a=Math.random()*Math.PI*2, r=Math.random()*sz*.065;
+    c2.save(); c2.globalAlpha=Math.random()*.4+.08;
+    c2.fillStyle=`hsl(${hue+Math.random()*30-15},65%,90%)`;
+    c2.beginPath(); c2.arc(Math.cos(a)*r,Math.sin(a)*r, Math.random()*2+.4,0,Math.PI*2); c2.fill();
+    c2.restore();
+  }
+  // core glow
+  const cg=c2.createRadialGradient(0,0,0,0,0,sz*.1);
+  cg.addColorStop(0,`hsla(${hue},70%,95%,.28)`);
+  cg.addColorStop(1,`hsla(${hue},70%,95%,0)`);
+  c2.globalAlpha=1; c2.fillStyle=cg;
+  c2.beginPath(); c2.arc(0,0,sz*.1,0,Math.PI*2); c2.fill();
+  return oc;
+}
+
+const GALAXIES = [
+  { wx:800+Math.random()*1200,  wy:600+Math.random()*1000,  parallax:.04, rot:Math.random()*Math.PI*2, rotSpeed:.00025, alpha:.3, twinkle:0, oc:buildGalaxy(210,3,640) },
+  { wx:4000+Math.random()*1500, wy:800+Math.random()*1200,  parallax:.06, rot:Math.random()*Math.PI*2, rotSpeed:-.0002,alpha:.25,twinkle:2, oc:buildGalaxy(38,2,560)  },
+  { wx:1200+Math.random()*1000, wy:3500+Math.random()*1500, parallax:.05, rot:Math.random()*Math.PI*2, rotSpeed:.00018, alpha:.28,twinkle:4, oc:buildGalaxy(155,4,700) },
+  { wx:3500+Math.random()*1500, wy:3000+Math.random()*1500, parallax:.035,rot:Math.random()*Math.PI*2, rotSpeed:-.00015,alpha:.32,twinkle:1, oc:buildGalaxy(280,3,600) },
+];
+
+function drawGalaxies() {
+  for (const g of GALAXIES) {
+    g.rot      += g.rotSpeed;
+    g.twinkle  += .003;
+    const sx = (g.wx-camX)*(1-g.parallax)+W/2;
+    const sy = (g.wy-camY)*(1-g.parallax)+H/2;
+    const sz = g.oc.width;
+    if (sx<-sz||sx>W+sz||sy<-sz||sy>H+sz) continue;
+    const a = g.alpha*(.88+.12*Math.sin(g.twinkle));
+    ctx.save();
+    ctx.globalAlpha=a;
+    ctx.translate(sx,sy); ctx.rotate(g.rot);
+    ctx.drawImage(g.oc,-sz/2,-sz/2,sz,sz);
+    ctx.restore();
+  }
+}
+
+// ═══════════════════════════════════════════
+// SOUL
+// ═══════════════════════════════════════════
+function updateSoul() {
+  const ssx=soul.wx-camX+W/2, ssy=soul.wy-camY+H/2;
+  const dx=mouse.x-ssx, dy=mouse.y-ssy;
+  const d=Math.hypot(dx,dy);
+  if (d>.5) {
+    const spd=Math.min(2.4*(1+d*.008),14);
+    soul.wx+=dx/d*spd; soul.wy+=dy/d*spd;
+  }
+  soul.wx=Math.max(10,Math.min(WORLD-10,soul.wx));
+  soul.wy=Math.max(10,Math.min(WORLD-10,soul.wy));
+  camX+=(soul.wx-camX)*.075;
+  camY+=(soul.wy-camY)*.075;
+
+  const ss=toScreen(soul.wx,soul.wy);
+  trail.push({x:ss.x,y:ss.y,t:1});
+  if(trail.length>TRAIL_MAX) trail.shift();
+  for(const p of trail) p.t=Math.max(0,p.t-1/TRAIL_MAX);
+}
+
+function drawTrail() {
+  for (let i=1;i<trail.length;i++) {
+    const a=trail[i].t*.17;
+    if(a<.005) continue;
+    ctx.save(); ctx.globalAlpha=a;
+    ctx.strokeStyle=`rgba(200,200,255,${a})`;
+    ctx.lineWidth=trail[i].t*2.8; ctx.lineCap='round';
+    ctx.beginPath();
+    ctx.moveTo(trail[i-1].x,trail[i-1].y);
+    ctx.lineTo(trail[i].x,trail[i].y);
+    ctx.stroke(); ctx.restore();
+  }
+}
+
 function drawSoul() {
-  const { x, y } = toScreen(soul.wx, soul.wy);
-  const pulse = 1 + Math.sin(tick * 0.04) * 0.12;
-
-  // outer glow layers
-  drawGlow(x, y, SOUL_RADIUS * 10 * pulse, 'rgba(200,200,255,', 0.04, 0);
-  drawGlow(x, y, SOUL_RADIUS * 5  * pulse, 'rgba(220,220,255,', 0.10, 0);
-  drawGlow(x, y, SOUL_RADIUS * 2.5* pulse, 'rgba(240,240,255,', 0.25, 0);
-
-  // core
+  const {x,y}=toScreen(soul.wx,soul.wy);
+  const p=1+Math.sin(tick*.042)*.1;
+  radialGlow(x,y,SOUL_R*11*p,'rgba(200,200,255,',.034);
+  radialGlow(x,y,SOUL_R*5.5*p,'rgba(220,220,255,',.09);
+  radialGlow(x,y,SOUL_R*2.5*p,'rgba(245,245,255,',.22);
   ctx.save();
-  ctx.globalAlpha = 0.92;
-  ctx.fillStyle = '#f5f5ff';
-  ctx.shadowColor = 'rgba(200,200,255,0.9)';
-  ctx.shadowBlur = 12;
-  ctx.beginPath();
-  ctx.arc(x, y, SOUL_RADIUS * pulse, 0, Math.PI*2);
-  ctx.fill();
+  ctx.globalAlpha=.92;
+  ctx.fillStyle='#f5f5ff';
+  ctx.shadowColor='rgba(200,200,255,.85)'; ctx.shadowBlur=14;
+  ctx.beginPath(); ctx.arc(x,y,SOUL_R*p,0,Math.PI*2); ctx.fill();
   ctx.restore();
 }
 
-// ──────────────────────────────────────────────
+// ═══════════════════════════════════════════
 // STARS
-// ──────────────────────────────────────────────
-function createStar(text, emo, user) {
-  const sx = toScreen(soul.wx, soul.wy).x;
-  const sy = toScreen(soul.wx, soul.wy).y;
-
-  // appear near soul with a bit of random scatter
-  const angle  = Math.random() * Math.PI * 2;
-  const dist   = 60 + Math.random() * 100;
-  const spawnSX = sx + Math.cos(angle) * dist;
-  const spawnSY = sy + Math.sin(angle) * dist;
-  const { wx, wy } = toWorld(spawnSX, spawnSY);
-
-  const e = EMO[emo];
+// ═══════════════════════════════════════════
+function createStar(text,emo,user) {
+  const angle=Math.random()*Math.PI*2;
+  const dist =65+Math.random()*110;
+  const sp   =toScreen(soul.wx,soul.wy);
+  const {wx,wy}=toWorld(sp.x+Math.cos(angle)*dist, sp.y+Math.sin(angle)*dist);
+  const e=EMO[emo];
   stars.push({
-    wx, wy,
-    text, emo, user: user || 'anónimo',
-    color: e.color, glow: e.glow,
-    pulse: e.pulse, vibrate: e.vibrate, drift: e.drift,
-    r: STAR_BASE_R + Math.random() * 3,
-    phase: Math.random() * Math.PI * 2,
-    vx: (Math.random()-0.5) * e.drift,
-    vy: (Math.random()-0.5) * e.drift,
-    born: tick,
-    alpha: 0,    // fades in
-    scale: 0.1,  // grows in
+    wx,wy,text,emo,
+    user:user||'anónimo',
+    color:e.color, glow:e.glow,
+    pulse:e.pulse, vibrate:e.vibrate, drift:e.drift,
+    r:4.5+Math.random()*3,
+    phase:Math.random()*Math.PI*2,
+    vx:(Math.random()-.5)*e.drift,
+    vy:(Math.random()-.5)*e.drift,
+    alpha:0, scale:.08,
+    absorbed:0,
+    revealed:false,
   });
 }
 
 function updateStars() {
+  const ss=toScreen(soul.wx,soul.wy);
   for (const s of stars) {
-    // fade in
-    if (s.alpha < 1) s.alpha = Math.min(1, s.alpha + 0.025);
-    if (s.scale < 1) s.scale = Math.min(1, s.scale + 0.03);
+    if(s.alpha<1) s.alpha=Math.min(1,s.alpha+.022);
+    if(s.scale<1) s.scale=Math.min(1,s.scale+.028);
+    if(s.drift>0) {
+      s.wx+=s.vx; s.wy+=s.vy;
+      if(Math.random()<.005){ s.vx=(Math.random()-.5)*s.drift*2; s.vy=(Math.random()-.5)*s.drift*2; }
+    }
+    const {x,y}=toScreen(s.wx,s.wy);
+    const d=Math.hypot(ss.x-x,ss.y-y);
 
-    // drift
-    if (s.drift > 0) {
-      s.wx += s.vx;
-      s.wy += s.vy;
-      if (Math.random() < 0.005) {
-        s.vx = (Math.random()-0.5) * s.drift * 2;
-        s.vy = (Math.random()-0.5) * s.drift * 2;
-      }
+    // absorption glow ramp
+    s.absorbed = d < ABSORB_R
+      ? Math.min(1, s.absorbed+.045)
+      : Math.max(0, s.absorbed-.03);
+
+    // reveal on proximity
+    if (d < REVEAL_R && !s.revealed) {
+      s.revealed=true;
+      showMessage(s);
+    }
+    if (d >= REVEAL_R+10 && s.revealed && absorbedStar===s) {
+      s.revealed=false;
+      hideMessage();
     }
   }
 }
 
 function drawStar(s) {
-  const { x, y } = toScreen(s.wx, s.wy);
-  // cull offscreen
-  if (x < -100 || x > W+100 || y < -100 || y > H+100) return;
+  const {x,y}=toScreen(s.wx,s.wy);
+  if(x<-130||x>W+130||y<-130||y>H+130) return;
 
-  let r     = s.r * s.scale;
-  let gAlpha= s.alpha;
-  let vOff  = { x: 0, y: 0 };
-  const t   = tick + s.phase * 20;
+  let r=s.r*s.scale;
+  let vx=0,vy=0;
+  const t=tick+s.phase*20;
 
-  // PULSE (feliz)
-  if (s.pulse) {
-    const p = 1 + Math.sin(t * 0.05) * 0.25;
-    r *= p;
-    gAlpha *= 0.8 + Math.sin(t * 0.05) * 0.2;
+  if(s.pulse)   { r*=(1+Math.sin(t*.048)*.28); }
+  if(s.vibrate) { vx=Math.sin(t*.38)*1.6; vy=Math.cos(t*.29)*1.1; }
+
+  const rx=x+vx, ry=y+vy;
+  const ab=s.absorbed;
+  const gb=1+ab*3.8;
+
+  // layered halos — grow with absorption
+  radialGlow(rx,ry, r*10*gb, `rgba(${s.glow},`, (.038+ab*.09)*s.alpha);
+  radialGlow(rx,ry, r*5.5*gb,`rgba(${s.glow},`, (.1+ab*.2)*s.alpha);
+  radialGlow(rx,ry, r*2.5*gb,`rgba(${s.glow},`, (.28+ab*.32)*s.alpha);
+
+  // absorption rings
+  if(ab>.04) {
+    ctx.save();
+    ctx.globalAlpha=ab*.32*s.alpha;
+    ctx.strokeStyle=s.color; ctx.lineWidth=.8;
+    ctx.beginPath();
+    ctx.arc(rx,ry, r*(2+ab*2.8+Math.sin(tick*.08)*.5), 0,Math.PI*2);
+    ctx.stroke(); ctx.restore();
+
+    ctx.save();
+    ctx.globalAlpha=ab*.15*s.alpha*Math.abs(Math.sin(tick*.06));
+    ctx.strokeStyle=s.color; ctx.lineWidth=.5;
+    ctx.beginPath();
+    ctx.arc(rx,ry, r*(3.2+ab*3.5+Math.sin(tick*.06+1)*.7), 0,Math.PI*2);
+    ctx.stroke(); ctx.restore();
+
+    // sparks flying toward soul
+    if(ab>.28) {
+      const ss=toScreen(soul.wx,soul.wy);
+      const dx=ss.x-rx, dy=ss.y-ry;
+      for(let k=0;k<4;k++) {
+        const prog=((tick*0.85+k*18)%55)/55;
+        const px=rx+dx*prog*.88+(Math.random()-.5)*10;
+        const py=ry+dy*prog*.88+(Math.random()-.5)*10;
+        ctx.save();
+        ctx.globalAlpha=(1-prog)*ab*.55;
+        ctx.fillStyle=s.color;
+        ctx.beginPath(); ctx.arc(px,py,1+Math.random()*.9,0,Math.PI*2); ctx.fill();
+        ctx.restore();
+      }
+    }
   }
 
-  // VIBRATE (ansioso)
-  if (s.vibrate) {
-    vOff.x = Math.sin(t * 0.4) * 1.8;
-    vOff.y = Math.cos(t * 0.31) * 1.2;
-    gAlpha *= 0.7 + Math.abs(Math.sin(t * 0.2)) * 0.3;
-  }
-
-  const rx = x + vOff.x;
-  const ry = y + vOff.y;
-
-  // proximity glow
-  const ssx = toScreen(soul.wx, soul.wy);
-  const pd  = Math.hypot(rx - ssx.x, ry - ssx.y);
-  const proximity = Math.max(0, 1 - pd / 160);
-  const glowBoost = 1 + proximity * 2;
-
-  // hovered / active
-  const isHov = (s === hoveredStar);
-  const isAct = (s === activeStar);
-
-  // outer halos
-  if (gAlpha > 0.05) {
-    drawGlow(rx, ry, r * 9  * glowBoost, s.glow, (0.06 + proximity*0.08) * gAlpha, 0);
-    drawGlow(rx, ry, r * 5  * glowBoost, s.glow, (0.12 + proximity*0.12) * gAlpha, 0);
-    drawGlow(rx, ry, r * 2.5* glowBoost, s.glow, (0.35 + proximity*0.2)  * gAlpha, 0);
-  }
-
-  // expand on hover / active
-  const displayR = isAct ? r * 2.4 : isHov ? r * 1.5 : r;
-
+  // core
   ctx.save();
-  ctx.globalAlpha = s.alpha;
-  ctx.fillStyle = s.color;
-  ctx.shadowColor = s.color;
-  ctx.shadowBlur  = isAct ? 24 : isHov ? 14 : 6;
-  ctx.beginPath();
-  ctx.arc(rx, ry, displayR, 0, Math.PI*2);
-  ctx.fill();
+  ctx.globalAlpha=s.alpha;
+  ctx.fillStyle=s.color;
+  ctx.shadowColor=s.color; ctx.shadowBlur=6+ab*20;
+  ctx.beginPath(); ctx.arc(rx,ry, r*(1+ab*.7),0,Math.PI*2); ctx.fill();
   ctx.restore();
 
-  // tiny spikes for anxious
-  if (s.vibrate && gAlpha > 0.3) {
+  // anxious spikes
+  if(s.vibrate) {
     ctx.save();
-    ctx.globalAlpha = 0.3 * gAlpha;
-    ctx.strokeStyle = s.color;
-    ctx.lineWidth = 0.7;
-    for (let k = 0; k < 6; k++) {
-      const a = (k / 6) * Math.PI * 2 + tick * 0.03;
+    ctx.globalAlpha=(.18+ab*.2)*s.alpha;
+    ctx.strokeStyle=s.color; ctx.lineWidth=.7;
+    for(let k=0;k<6;k++){
+      const a=(k/6)*Math.PI*2+tick*.03;
       ctx.beginPath();
-      ctx.moveTo(rx + Math.cos(a) * r * 1.2, ry + Math.sin(a) * r * 1.2);
-      ctx.lineTo(rx + Math.cos(a) * r * 2.5, ry + Math.sin(a) * r * 2.5);
+      ctx.moveTo(rx+Math.cos(a)*r*1.1, ry+Math.sin(a)*r*1.1);
+      ctx.lineTo(rx+Math.cos(a)*r*2.5, ry+Math.sin(a)*r*2.5);
       ctx.stroke();
     }
     ctx.restore();
   }
 }
 
-// ──────────────────────────────────────────────
-// HOVER / CLICK DETECTION
-// ──────────────────────────────────────────────
-function detectHover() {
-  let closest = null, minD = 60;
-  for (const s of stars) {
-    const { x, y } = toScreen(s.wx, s.wy);
-    const d = Math.hypot(mouse.x - x, mouse.y - y);
-    if (d < minD) { minD = d; closest = s; }
-  }
-  if (closest !== hoveredStar) {
-    hoveredStar = closest;
-  }
+// ═══════════════════════════════════════════
+// MESSAGE PANEL
+// ═══════════════════════════════════════════
+function showMessage(s) {
+  absorbedStar=s;
+  msgText.textContent=s.text;
+  msgUser.textContent='— '+s.user;
+  msgInner.style.setProperty('--star-color', s.color+'55');
+
+  const {x,y}=toScreen(s.wx,s.wy);
+  const panelW=280, panelH=110;
+  const margin=14;
+  let px=x;
+  let py=y-panelH-36;
+
+  px=Math.min(Math.max(px, margin+panelW/2), W-margin-panelW/2);
+  py=Math.max(py, margin+10);
+  if(py+panelH>H-120) py=y-panelH-36; // flip if needed
+
+  msgPanel.style.left=px+'px';
+  msgPanel.style.top =py+'px';
+  msgPanel.classList.add('visible');
 }
 
-function showTooltip(s) {
-  if (!s) return;
-  const { x, y } = toScreen(s.wx, s.wy);
-  const tipX = Math.min(Math.max(x - 130, 10), W - 280);
-  const tipY = y - 100;
-  tooltip.style.left = tipX + 'px';
-  tooltip.style.top  = tipY + 'px';
-  ttMsg.textContent  = s.text;
-  ttUser.textContent = '— ' + s.user;
-  ttMsg.style.borderColor = s.color + '40';
-  tooltip.classList.add('visible');
-  activeStar = s;
+function hideMessage() {
+  msgPanel.classList.remove('visible');
+  setTimeout(()=>{ if(!msgPanel.classList.contains('visible')) absorbedStar=null; },500);
 }
 
-function hideTooltip() {
-  tooltip.classList.remove('visible');
-  activeStar = null;
-}
-
-canvas.addEventListener('click', e => {
-  // if clicking a star → show tooltip
-  if (hoveredStar) {
-    if (activeStar === hoveredStar) hideTooltip();
-    else showTooltip(hoveredStar);
-    return;
-  }
-  hideTooltip();
+document.getElementById('msg-close').addEventListener('click', ()=>{
+  if(absorbedStar) absorbedStar.revealed=false;
+  hideMessage();
 });
 
-// ──────────────────────────────────────────────
-// BACKGROUND PARTICLES (subtle)
-// ──────────────────────────────────────────────
-const bgParticles = Array.from({length: 80}, () => ({
-  x: Math.random() * W,
-  y: Math.random() * H,
-  r: Math.random() * 0.8 + 0.2,
-  a: Math.random() * 0.12 + 0.02,
-  twinkle: Math.random() * Math.PI * 2,
-  speed: Math.random() * 0.01 + 0.003,
-}));
-
-function drawBgParticles() {
-  for (const p of bgParticles) {
-    p.twinkle += p.speed;
-    const alpha = p.a * (0.5 + 0.5 * Math.sin(p.twinkle));
-    ctx.save();
-    ctx.globalAlpha = alpha;
-    ctx.fillStyle = '#8888cc';
-    ctx.beginPath();
-    ctx.arc(p.x, p.y, p.r, 0, Math.PI*2);
-    ctx.fill();
-    ctx.restore();
-  }
-}
-
-// ──────────────────────────────────────────────
+// ═══════════════════════════════════════════
 // MAIN LOOP
-// ──────────────────────────────────────────────
+// ═══════════════════════════════════════════
 function loop() {
   tick++;
-  ctx.clearRect(0, 0, W, H);
-
-  // deep space background
-  ctx.fillStyle = '#000005';
-  ctx.fillRect(0, 0, W, H);
+  ctx.clearRect(0,0,W,H);
+  ctx.fillStyle='#000005'; ctx.fillRect(0,0,W,H);
 
   // vignette
-  const vig = ctx.createRadialGradient(W/2, H/2, H*0.2, W/2, H/2, H*0.85);
-  vig.addColorStop(0, 'rgba(0,0,0,0)');
-  vig.addColorStop(1, 'rgba(0,0,5,0.7)');
-  ctx.fillStyle = vig;
-  ctx.fillRect(0, 0, W, H);
+  const vig=ctx.createRadialGradient(W/2,H/2,H*.17, W/2,H/2,H*.9);
+  vig.addColorStop(0,'rgba(0,0,0,0)');
+  vig.addColorStop(1,'rgba(0,0,6,.73)');
+  ctx.fillStyle=vig; ctx.fillRect(0,0,W,H);
 
-  drawBgParticles();
+  drawGalaxies();
+  drawDust();
   updateSoul();
   updateStars();
-  detectHover();
-
   drawTrail();
-  for (const s of stars) drawStar(s);
+  for(const s of stars) drawStar(s);
   drawSoul();
 
   requestAnimationFrame(loop);
 }
-
 loop();
 
-// ──────────────────────────────────────────────
-// HIDE INTRO
-// ──────────────────────────────────────────────
-setTimeout(() => {
-  document.getElementById('intro').classList.add('hidden');
-  introGone = true;
-}, 5500);
-
-// ──────────────────────────────────────────────
+// ═══════════════════════════════════════════
 // EMOTION SELECTOR
-// ──────────────────────────────────────────────
-document.querySelectorAll('.emo-btn').forEach(btn => {
-  btn.addEventListener('click', () => {
-    document.querySelectorAll('.emo-btn').forEach(b => b.classList.remove('active'));
+// ═══════════════════════════════════════════
+document.querySelectorAll('.emo-btn').forEach(btn=>{
+  btn.addEventListener('click',()=>{
+    document.querySelectorAll('.emo-btn').forEach(b=>b.classList.remove('active'));
     btn.classList.add('active');
-    selEmo = btn.dataset.emo;
+    selEmo=btn.dataset.emo;
   });
 });
 
-// ──────────────────────────────────────────────
+// ═══════════════════════════════════════════
 // CREATE STAR
-// ──────────────────────────────────────────────
-function doCreate() {
-  const text = document.getElementById('thought-input').value.trim();
-  const user = document.getElementById('username-input').value.trim();
-  if (!text) {
-    document.getElementById('thought-input').focus();
-    return;
-  }
-  createStar(text, selEmo, user || 'anónimo');
-  document.getElementById('thought-input').value = '';
+// ═══════════════════════════════════════════
+function doCreate(){
+  const text=document.getElementById('thought-input').value.trim();
+  const user=document.getElementById('username-input').value.trim();
+  if(!text){ document.getElementById('thought-input').focus(); return; }
+  createStar(text,selEmo,user||'anónimo');
+  document.getElementById('thought-input').value='';
 }
-
-document.getElementById('create-btn').addEventListener('click', doCreate);
-
-document.getElementById('thought-input').addEventListener('keydown', e => {
-  if (e.key === 'Enter' && !e.shiftKey) {
-    e.preventDefault();
-    doCreate();
-  }
+document.getElementById('create-btn').addEventListener('click',doCreate);
+document.getElementById('thought-input').addEventListener('keydown',e=>{
+  if(e.key==='Enter'&&!e.shiftKey){ e.preventDefault(); doCreate(); }
 });
 
-// ──────────────────────────────────────────────
-// PREVENT CURSOR DEFAULT
-// ──────────────────────────────────────────────
-document.querySelectorAll('button, input, textarea').forEach(el => {
-  el.addEventListener('mouseenter', () => cursor.style.transform = 'translate(-50%,-50%) scale(2)');
-  el.addEventListener('mouseleave', () => cursor.style.transform = 'translate(-50%,-50%) scale(1)');
+// ═══════════════════════════════════════════
+// CURSOR
+// ═══════════════════════════════════════════
+document.querySelectorAll('button,input,textarea').forEach(el=>{
+  el.addEventListener('mouseenter',()=>cursorEl.classList.add('big'));
+  el.addEventListener('mouseleave',()=>cursorEl.classList.remove('big'));
 });
+
+// ═══════════════════════════════════════════
+// INTRO FADE
+// ═══════════════════════════════════════════
+setTimeout(()=>document.getElementById('intro').classList.add('hidden'), 5800);
 </script>
 </body>
 </html>
